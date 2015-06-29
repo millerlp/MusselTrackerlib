@@ -1,7 +1,7 @@
 /* MusselTrackerlib.cpp
 	Luke Miller 2015
 	Library functions for the Mussel Tracker v2 boards. 
-	Includes a class for Allegro A1391 hall effect sensors
+	Includes a class for Allegro A139x hall effect sensors
 	and general functions.
 
 
