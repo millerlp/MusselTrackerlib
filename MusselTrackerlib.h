@@ -1,4 +1,4 @@
-/* MusselTrackerv2.h
+/* MusselTrackerlib.h
 	Luke Miller 2015
 	Library functions for the Mussel Tracker v2 boards. 
 	Includes a class for Allegro A1391 hall effect sensors
@@ -7,8 +7,8 @@
 
 */
 
-#ifndef MusselTrackerv2_H
-#define MusselTrackerv2_H
+#ifndef MusselTrackerlib_H
+#define MusselTrackerlib_H
 
 #include <Arduino.h> // to get access to pinMode, digitalRead etc functions
 #include "SdFat.h"
