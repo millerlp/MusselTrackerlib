@@ -1,5 +1,5 @@
 /* MusselTrackerlib.h
-	Luke Miller 2015
+	Copyright Luke Miller 2015
 	Library functions for the Mussel Tracker v2 boards. 
 	Includes a class for Allegro A1391 hall effect sensors
 	and general functions.
@@ -13,6 +13,12 @@
 #include <Arduino.h> // to get access to pinMode, digitalRead etc functions
 #include "SdFat.h"
 #include "RTClib.h" // to get access to DateTime class and functions
+// Various additional libraries for access to sleep mode functions
+#include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <util/atomic.h>
+#include <wiring_private.h>
+#include <avr/wdt.h>
 
 // Create a variable type hallSensor_t that can 
 // take on 2 values, HALL1 or HALL2. This allows 
@@ -43,5 +49,7 @@ void printTimeSerial(DateTime now);
 // (which SdFile mylogfile would do).
 void printTimeToSD(SdFile& mylogfile, DateTime now); 
 
+// Put the AVR to sleep until a TIMER2 interrupt fires to awaken it
+void goToSleep();
 
 #endif
