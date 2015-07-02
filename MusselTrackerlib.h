@@ -52,4 +52,10 @@ void printTimeToSD(SdFile& mylogfile, DateTime now);
 // Put the AVR to sleep until a TIMER2 interrupt fires to awaken it
 void goToSleep();
 
+// Put the AVR into a low power sleep mode with 8 second delays
+// Used primarily if you're done taking data
+void lowPowerSleep();
+
+
+
 #endif

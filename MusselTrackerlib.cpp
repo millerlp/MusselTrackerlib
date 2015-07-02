@@ -188,3 +188,62 @@ void goToSleep() {
 	ADCSRA = adcsra; // re-apply the previous settings to the ADC status register
 
 }
+
+
+//-----------------------------------------------------------------------------
+// lowPowerSleep function
+// This sleep version uses the watchdog timer to sleep for 8 seconds at a time
+
+void lowPowerSleep(void){
+
+	/* It seems to be necessary to zero out the Asynchronous clock status 
+	 * register (ASSR) before enabling the watchdog timer interrupts in this
+	 * process. 
+	 */
+	ASSR = 0;  
+	TIMSK2 = 0; // stop timer 2 interrupts
+	// Cannot re-enter sleep mode within one TOSC cycle. 
+	// This provides the needed delay.
+	OCR2A = 0; // write to OCR2A, we're not using it, but no matter
+	while (ASSR & _BV(OCR2AUB)) {} // wait for OCR2A to be updated
+
+	ADCSRA = 0;   // disable ADC
+	set_sleep_mode (SLEEP_MODE_PWR_DOWN);  // specify sleep mode
+	sleep_enable();
+	// Do not interrupt before we go to sleep, or the
+	// ISR will detach interrupts and we won't wake.
+	noInterrupts ();
+	//--------------------------------------------------------------------------
+	// Set up Watchdog timer for long term sleep
+
+	// Clear the reset flag first
+	MCUSR &= ~(1 << WDRF);
+
+	// In order to change WDE or the prescaler, we need to
+	// set WDCE (This will allow updates for 4 clock cycles).
+	WDTCSR |= (1 << WDCE) | (1 << WDE);
+	// Enable watchdog interrupt (WDIE), and set 8 second delay
+	WDTCSR = bit(WDIE) | bit(WDP3) | bit(WDP0); 
+	wdt_reset();
+
+	// Turn off brown-out enable in software
+	// BODS must be set to one and BODSE must be set to zero within four clock 
+	// cycles, see section 10.11.2 of 328P datasheet
+	MCUCR = bit (BODS) | bit (BODSE);
+	// The BODS bit is automatically cleared after three clock cycles
+	MCUCR = bit (BODS);
+	// We are guaranteed that the sleep_cpu call will be done
+	// as the processor executes the next instruction after
+	// interrupts are turned on.
+	interrupts ();  // one cycle, re-enables interrupts
+	sleep_cpu ();   // one cycle, going to sleep now, wake on interrupt
+	// The AVR is now asleep. In SLEEP_MODE_PWR_DOWN it will only wake
+	// when the watchdog timer counter rolls over and creates an interrupt
+	//-------------------------------------------------------------------
+	// disable sleep as a precaution after waking
+	sleep_disable();
+}
+
+
+
+
