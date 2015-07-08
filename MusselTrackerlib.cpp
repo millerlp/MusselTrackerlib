@@ -9,6 +9,7 @@
 
 
 #include "MusselTrackerlib.h"
+#include "LSM303.h"
 
 HallSensor::HallSensor(){}
 HallSensor::~HallSensor(){}
@@ -43,10 +44,10 @@ int HallSensor::readHall(hallSensor_t hallsensor){
 			digitalWrite(A2, HIGH); // wake sensor
 			delay(1); // allow time to wake up
 			analogRead(A6); // make a throw-away reading
-			delay(5);
+			delay(2);
 			for (byte i = 0; i<4; i++){
 				readADC = readADC + analogRead(A6);
-				delay(5);
+				delay(2);
 			}
 			// Do a 2-bit right shift to divide readADC
 			// by 4 to get the average of the 4 readings
@@ -59,10 +60,10 @@ int HallSensor::readHall(hallSensor_t hallsensor){
 			digitalWrite(A3, HIGH); // wake sensor
 			delay(1); // allow time to wake up
 			analogRead(A7); // make a throw-away reading
-			delay(5);
+			delay(2);
 			for (byte i = 0; i<4; i++){
 				readADC = readADC + analogRead(A7);
-				delay(5);
+				delay(2);
 			}
 			// Do a 2-bit right shift to divide readADC
 			// by 4 to get the average of the 4 readings
@@ -244,6 +245,59 @@ void lowPowerSleep(void){
 	sleep_disable();
 }
 
+//-------------- checkMCUSR ------------------------------------------------
+// Function checkMCUSR(byte mcusr, byte ERRLED)
+// This function is supplied a byte value that represents the contents of the
+// MCU status register. On a restart, this register's 4 lowest bits contain
+// flags noting what might have caused the restart. If the restart was due
+// to a brown-out, we want to go into a permanent sleep mode to avoid 
+// corrupting the SD card. 
+void checkMCUSR(byte mcusr, byte ERRLED) 
+{	
+	//----------------------------------------------------------------------
+	// Check the MCU Status Register (MCUSR) to see why the
+	// program has started/restarted. See section 11.9.1 of the AVR datasheet.
+	// Check if the Brown-Out Reset Flag is 1 by &-ing MCUSR with a 1 in
+	// the BORF position. MCUSR and BORF are defined internally in the
+	// various avr libraries. 
+	if (mcusr & _BV(BORF) ) { 
+		// Check to see if the external reset flag EXTRF was set. If it 
+		// is set, this next test will fail and normal bootup will proceed.
+		if (!(mcusr & _BV(EXTRF))){	
+			// Now check if the Power-On Reset Flag is 0. A full power-on
+			// reset will usually have both BORF and PORF true, but a 
+			// brown-out when already powered-up will not have PORF true. 
+			if (!(mcusr & _BV(PORF))){ 
+				// Uh-oh, PORF was not true, so we only have a BORF flag.
+				// This likely signals that the power supply is getting low
+				// enough that it is hitting the brown-out level (~2.7v).
+				// In this case, we should put the unit into a permanent
+				// sleep to avoid corrupting the SD card.
 
+				// Go into a permanent sleep loop. This cannot be exited 
+				// without a reset of some sort. Continued brown-outs should
+				// simply end up back here. The ERRLED should blink briefly
+				// every 8 seconds to indicate that the program has ended 
+				// up in this brown-out-induced loop.
+				while(1){
+					digitalWrite(ERRLED, HIGH);
+					delay(3);
+					digitalWrite(ERRLED, LOW);
+					lowPowerSleep();  // go back to sleep
+				}
+			}
+		}
+	}
+}
 
-
+//-------------- printBits -----------------------------------------
+// A simple function to print out a byte as 1's and 0's to Serial
+void printBits(byte myByte){
+	for(byte mask = 0x80; mask; mask >>= 1){
+		if(mask  & myByte){
+		   Serial.print('1');
+		} else {
+		   Serial.print('0');
+		}
+	}
+}

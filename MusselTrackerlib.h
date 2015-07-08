@@ -11,8 +11,9 @@
 #define MusselTrackerlib_H
 
 #include <Arduino.h> // to get access to pinMode, digitalRead etc functions
-#include "SdFat.h"
-#include "RTClib.h" // to get access to DateTime class and functions
+#include "SdFat.h"	// https://github.com/greiman/SdFat
+#include "RTClib.h" // https://github.com/millerlp/RTClib
+#include "LSM303.h"	// https://github.com/pololu/lsm303-arduino
 // Various additional libraries for access to sleep mode functions
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -56,6 +57,12 @@ void goToSleep();
 // Used primarily if you're done taking data
 void lowPowerSleep();
 
+// Check the contents of the MCU Status Register and put the 
+// chip into permanent low power sleep if it has suffered a 
+// brownout (~2.7V). 
+void checkMCUSR(byte mcusr, byte ERRLED);
 
+// A simple function to print out a byte as 1's and 0's to Serial
+void printBits(byte myByte);
 
 #endif
